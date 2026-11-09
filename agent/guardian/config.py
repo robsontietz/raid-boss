@@ -37,7 +37,7 @@ def defaults() -> dict:
             "confirm_delay_ms": 1200,
             "sensitivity": 5,
             "min_valid_rows_pct": 70,
-            "row_match_threshold": 0.55,
+            "row_match_threshold": 0.65,
             "auto_start": False,
         },
         "calibration": {

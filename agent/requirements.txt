@@ -1,0 +1,9 @@
+aiohttp>=3.9,<4
+mss>=9.0
+numpy>=1.26
+opencv-python>=4.9
+PyAutoGUI>=0.9.54
+requests>=2.31
+# Opcional (OCR auxiliar para conferir os nomes na calibração).
+# Requer também o Tesseract instalado: https://github.com/UB-Mannheim/tesseract/wiki
+# pytesseract>=0.3.10

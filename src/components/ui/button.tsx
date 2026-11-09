@@ -16,6 +16,11 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        gold: "bg-[image:var(--gradient-gold)] text-primary-foreground font-display font-semibold tracking-wider uppercase shadow hover:brightness-110 glow-gold",
+        ember:
+          "bg-ember text-destructive-foreground font-display font-semibold tracking-wider uppercase shadow hover:brightness-110 glow-ember",
+        frame:
+          "border border-gold-dim/60 bg-secondary/60 text-foreground hover:border-gold hover:bg-accent hover:text-accent-foreground",
       },
       size: {
         default: "h-9 px-4 py-2",

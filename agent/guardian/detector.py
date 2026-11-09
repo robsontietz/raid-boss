@@ -212,32 +212,24 @@ def _shift(a: np.ndarray, dx: int, dy: int) -> np.ndarray:
 def shape_similarity(mask: np.ndarray, ref: np.ndarray, max_shift: int = MAX_SHIFT) -> float:
     """Semelhança (0..1) entre o formato do texto atual e o de referência.
 
-    Independe da cor: compara apenas máscaras binárias, tolerando pequenos
-    deslocamentos e 1 px de diferença de espessura do traço.
+    Independe da cor: compara apenas máscaras binárias (interseção / união),
+    tolerando pequenos deslocamentos. O limiar adaptativo da máscara faz o
+    mesmo nome render quase a mesma máscara em cinza, vermelho ou outra cor.
     """
     if mask.shape != ref.shape:
         return 0.0
-    ref_sum = float(ref.sum())
-    if ref_sum == 0 or mask.sum() == 0:
+    if ref.sum() == 0 or mask.sum() == 0:
         return 0.0
-    kernel = np.ones((3, 3), np.uint8)
-    ref_d = cv2.dilate(ref, kernel)
-    mask_d = cv2.dilate(mask, kernel)
     best = 0.0
     for dy in range(-max_shift, max_shift + 1):
         for dx in range(-max_shift, max_shift + 1):
             m = _shift(mask, dx, dy)
-            m_sum = float(m.sum())
-            if m_sum == 0:
+            union = float((m | ref).sum())
+            if union == 0:
                 continue
-            md = _shift(mask_d, dx, dy)
-            precision = float((m & ref_d).sum()) / m_sum
-            recall = float((ref & md).sum()) / ref_sum
-            if precision + recall == 0:
-                continue
-            f1 = 2 * precision * recall / (precision + recall)
-            if f1 > best:
-                best = f1
+            iou = float((m & ref).sum()) / union
+            if iou > best:
+                best = iou
     return best
 
 
