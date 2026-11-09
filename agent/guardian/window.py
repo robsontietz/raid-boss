@@ -1,0 +1,178 @@
+"""Localização da janela do Lineage 2 (Win32 via ctypes, sem dependências extras)."""
+from __future__ import annotations
+
+import os
+import sys
+import time
+from dataclasses import dataclass, asdict
+from typing import Optional
+
+IS_WINDOWS = sys.platform == "win32"
+
+if IS_WINDOWS:
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows.argtypes = [WNDENUMPROC, wintypes.LPARAM]
+    user32.EnumWindows.restype = wintypes.BOOL
+    user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.IsWindow.argtypes = [wintypes.HWND]
+    user32.IsIconic.argtypes = [wintypes.HWND]
+    user32.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.ClientToScreen.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.POINT)]
+    user32.GetForegroundWindow.restype = wintypes.HWND
+    user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.BringWindowToTop.argtypes = [wintypes.HWND]
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.keybd_event.argtypes = [wintypes.BYTE, wintypes.BYTE, wintypes.DWORD, ctypes.c_size_t]
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+                                                    ctypes.POINTER(wintypes.DWORD)]
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+
+
+@dataclass
+class GameWindow:
+    hwnd: int
+    title: str
+    process: str
+    left: int  # origem da área cliente na tela (px físicos)
+    top: int
+    width: int
+    height: int
+    minimized: bool
+    foreground: bool
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d.pop("hwnd", None)
+        return d
+
+
+def enable_dpi_awareness() -> None:
+    """Faz as coordenadas do Windows coincidirem com os pixels capturados."""
+    if not IS_WINDOWS:
+        return
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
+def _title(hwnd) -> str:
+    n = user32.GetWindowTextLengthW(hwnd)
+    if n <= 0:
+        return ""
+    buf = ctypes.create_unicode_buffer(n + 1)
+    user32.GetWindowTextW(hwnd, buf, n + 1)
+    return buf.value
+
+
+def _process_name(hwnd) -> str:
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    h = kernel32.OpenProcess(0x1000, False, pid.value)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not h:
+        return ""
+    try:
+        buf = ctypes.create_unicode_buffer(520)
+        size = wintypes.DWORD(520)
+        if kernel32.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(size)):
+            return os.path.basename(buf.value)
+        return ""
+    finally:
+        kernel32.CloseHandle(h)
+
+
+def list_windows() -> list[dict]:
+    """Janelas visíveis com título (para escolher a do jogo no painel)."""
+    if not IS_WINDOWS:
+        return []
+    found = []
+
+    def cb(hwnd, _lparam):
+        if user32.IsWindowVisible(hwnd):
+            t = _title(hwnd)
+            if t:
+                found.append({"hwnd": int(hwnd), "title": t, "process": _process_name(hwnd)})
+        return True
+
+    user32.EnumWindows(WNDENUMPROC(cb), 0)
+    return found
+
+
+def _describe(hwnd, title: str, process: str) -> Optional[GameWindow]:
+    rect = wintypes.RECT()
+    if not user32.GetClientRect(hwnd, ctypes.byref(rect)):
+        return None
+    pt = wintypes.POINT(0, 0)
+    user32.ClientToScreen(hwnd, ctypes.byref(pt))
+    fg = user32.GetForegroundWindow()
+    return GameWindow(
+        hwnd=int(hwnd), title=title, process=process,
+        left=int(pt.x), top=int(pt.y), width=int(rect.right - rect.left), height=int(rect.bottom - rect.top),
+        minimized=bool(user32.IsIconic(hwnd)), foreground=bool(fg) and int(fg) == int(hwnd),
+    )
+
+
+def find_game_window(title_contains: str, process_name: str = "") -> Optional[GameWindow]:
+    """Primeira janela cujo título contém o texto E (se informado) cujo processo bate.
+
+    Exigir o nome do processo evita confundir o jogo com, por exemplo, uma aba do
+    navegador chamada "Lineage II".
+    """
+    if not IS_WINDOWS:
+        return None
+    needle = (title_contains or "").lower().strip()
+    proc = (process_name or "").lower().strip()
+    if not needle:
+        return None
+    for w in list_windows():
+        if needle not in w["title"].lower():
+            continue
+        if proc and w["process"].lower() != proc:
+            continue
+        return _describe(w["hwnd"], w["title"], w["process"])
+    return None
+
+
+def refresh(win: GameWindow) -> Optional[GameWindow]:
+    if not IS_WINDOWS or not user32.IsWindow(win.hwnd):
+        return None
+    return _describe(win.hwnd, win.title, win.process)
+
+
+def bring_to_front(win: GameWindow) -> bool:
+    if not IS_WINDOWS:
+        return False
+    if user32.IsIconic(win.hwnd):
+        user32.ShowWindow(win.hwnd, 9)  # SW_RESTORE
+    # Truque do ALT: libera a trava de primeiro plano do Windows.
+    user32.keybd_event(0x12, 0, 0, 0)
+    user32.SetForegroundWindow(win.hwnd)
+    user32.BringWindowToTop(win.hwnd)
+    user32.keybd_event(0x12, 0, 2, 0)
+    time.sleep(0.25)
+    fg = user32.GetForegroundWindow()
+    return bool(fg) and int(fg) == int(win.hwnd)
+
+
+def post_click(win: GameWindow, x: int, y: int) -> None:
+    """Clique em segundo plano via mensagens da janela (alguns clientes ignoram)."""
+    lparam = (int(y) << 16) | (int(x) & 0xFFFF)
+    user32.PostMessageW(win.hwnd, 0x0200, 0, lparam)  # WM_MOUSEMOVE
+    user32.PostMessageW(win.hwnd, 0x0201, 0x0001, lparam)  # WM_LBUTTONDOWN
+    time.sleep(0.04)
+    user32.PostMessageW(win.hwnd, 0x0202, 0, lparam)  # WM_LBUTTONUP
