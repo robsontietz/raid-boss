@@ -3,18 +3,21 @@ import { Shield } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useAgent } from "@/lib/agent/AgentProvider";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { PulseDot } from "./badges";
+import { LanguageToggle } from "./LanguageToggle";
 
 const NAV = [
-  { to: "/", label: "Painel" },
-  { to: "/historico", label: "Histórico" },
-  { to: "/calibracao", label: "Calibração" },
-  { to: "/configuracoes", label: "Configurações" },
-  { to: "/instalacao", label: "Instalação" },
+  { to: "/", key: "panel" },
+  { to: "/historico", key: "history" },
+  { to: "/calibracao", key: "calibration" },
+  { to: "/configuracoes", key: "settings" },
+  { to: "/instalacao", key: "install" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { connection } = useAgent();
+  const { t } = useI18n();
   const tone =
     connection === "connected"
       ? "success"
@@ -25,19 +28,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           : "danger";
   const label =
     connection === "connected"
-      ? "Agente conectado"
+      ? t.conn.agentConnected
       : connection === "connecting"
-        ? "Conectando…"
+        ? t.conn.connecting
         : connection === "unauthorized"
-          ? "Token inválido"
+          ? t.conn.unauthorized
           : connection === "idle"
-            ? "Agente não configurado"
-            : "Agente offline";
+            ? t.conn.idle
+            : t.conn.offline;
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded border border-gold-dim/70 bg-secondary">
               <Shield className="size-5 text-gold" />
@@ -57,17 +60,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="whitespace-nowrap rounded px-3 py-1.5 font-display text-xs font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
                 activeProps={{ className: "bg-secondary text-gold" }}
               >
-                {n.label}
+                {t.nav[n.key]}
               </Link>
             ))}
           </nav>
           <Link
             to="/configuracoes"
-            className="hidden shrink-0 items-center gap-2 rounded border border-border bg-secondary/60 px-3 py-1.5 text-sm md:flex"
+            className="hidden shrink-0 items-center gap-2 rounded border border-border bg-secondary/60 px-3 py-1.5 text-sm xl:flex"
           >
             <PulseDot tone={tone} />
             {label}
           </Link>
+          <LanguageToggle />
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 pb-16">{children}</main>

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { DEFAULT_AGENT_URL } from "@/lib/bosses";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { AgentSnapshot, ConnectionState, LogEntry, RaidEvent } from "./types";
 
 const URL_KEY = "grw.agentUrl";
@@ -30,6 +31,8 @@ interface AgentContextValue {
   call: <T = unknown>(path: string, init?: { method?: string; body?: unknown }) => Promise<T>;
 }
 
+type ConnErrorKey = "tokenRefused" | "notFound" | "lost";
+
 const AgentContext = createContext<AgentContextValue | null>(null);
 
 function normalizeUrl(url: string) {
@@ -41,7 +44,11 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>("idle");
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connErrorKey, setConnectionError] = useState<ConnErrorKey | null>(null);
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
+  const connectionError = connErrorKey ? t.conn[connErrorKey] : null;
   const [snapshot, setSnapshot] = useState<AgentSnapshot | null>(null);
   const [events, setEvents] = useState<RaidEvent[]>([]);
   const [attempt, setAttempt] = useState(0);
@@ -93,9 +100,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
         });
       } catch {
-        throw new AgentError(
-          "Não foi possível falar com o agente. Ele está aberto neste computador?",
-        );
+        throw new AgentError(tRef.current.conn.unreachable);
       }
       let data: unknown = null;
       try {
@@ -105,7 +110,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       }
       if (!res.ok) {
         const d = data as { message?: string; error?: string } | null;
-        throw new AgentError(d?.message || d?.error || `Erro ${res.status}`);
+        throw new AgentError(d?.message || d?.error || tRef.current.conn.httpError(res.status));
       }
       return data as T;
     },
@@ -138,7 +143,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         const res = await fetch(`${agentUrl}/api/state`, { headers: { "X-Agent-Token": token } });
         if (res.status === 401) {
           setConnection("unauthorized");
-          setConnectionError("Token recusado pelo agente. Copie o token exibido na janela do agente.");
+          setConnectionError("tokenRefused");
           retryTimer = setTimeout(connect, 15000);
           return;
         }
@@ -148,9 +153,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         setSnapshot(snap);
       } catch {
         setConnection("offline");
-        setConnectionError(
-          "Agente não encontrado. Abra o iniciar.bat no PC do jogo (ou confira o endereço).",
-        );
+        setConnectionError("notFound");
         scheduleRetry();
         return;
       }
@@ -193,7 +196,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         if (wsRef.current === ws) wsRef.current = null;
         if (cancelled) return;
         setConnection("offline");
-        setConnectionError("Conexão com o agente perdida. Tentando reconectar…");
+        setConnectionError("lost");
         scheduleRetry();
       };
       ws.onerror = () => ws.close();
