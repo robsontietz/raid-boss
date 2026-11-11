@@ -90,7 +90,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
             "X-Agent-Token": token,
             ...(init?.body !== undefined ? { "Content-Type": "application/json" } : {}),
           },
-          body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+          ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
         });
       } catch {
         throw new AgentError(
@@ -166,7 +166,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         ping = setInterval(() => ws.readyState === WebSocket.OPEN && ws.send("ping"), 15000);
       };
       ws.onmessage = (ev) => {
-        let msg: { type: string; [k: string]: unknown };
+        let msg: { type: string; data?: unknown; events?: unknown; event?: unknown; entry?: unknown };
         try {
           msg = JSON.parse(ev.data as string);
         } catch {

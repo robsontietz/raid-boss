@@ -10,12 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CalibracaoRouteImport } from './routes/calibracao'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as InstalacaoRouteImport } from './routes/instalacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalibracaoRoute = CalibracaoRouteImport.update({
+  id: '/calibracao',
+  path: '/calibracao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -28,35 +35,55 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InstalacaoRoute = InstalacaoRouteImport.update({
+  id: '/instalacao',
+  path: '/instalacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calibracao': typeof CalibracaoRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
+  '/instalacao': typeof InstalacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calibracao': typeof CalibracaoRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
+  '/instalacao': typeof InstalacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calibracao': typeof CalibracaoRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
+  '/instalacao': typeof InstalacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/configuracoes' | '/historico'
+  fullPaths:
+    '/' | '/calibracao' | '/configuracoes' | '/historico' | '/instalacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracoes' | '/historico'
-  id: '__root__' | '/' | '/configuracoes' | '/historico'
+  to: '/' | '/calibracao' | '/configuracoes' | '/historico' | '/instalacao'
+  id:
+    | '__root__'
+    | '/'
+    | '/calibracao'
+    | '/configuracoes'
+    | '/historico'
+    | '/instalacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CalibracaoRoute: typeof CalibracaoRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   HistoricoRoute: typeof HistoricoRoute
+  InstalacaoRoute: typeof InstalacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calibracao': {
+      id: '/calibracao'
+      path: '/calibracao'
+      fullPath: '/calibracao'
+      preLoaderRoute: typeof CalibracaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -82,13 +116,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/instalacao': {
+      id: '/instalacao'
+      path: '/instalacao'
+      fullPath: '/instalacao'
+      preLoaderRoute: typeof InstalacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CalibracaoRoute: CalibracaoRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   HistoricoRoute: HistoricoRoute,
+  InstalacaoRoute: InstalacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

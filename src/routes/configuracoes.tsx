@@ -227,7 +227,7 @@ function SettingsPage() {
                   disabled={saving === "discord"}
                   onClick={async () => {
                     const patch: Record<string, unknown> = { enabled: cfg.discord.enabled };
-                    if (webhook.trim()) patch.webhook_url = webhook.trim();
+                    if (webhook.trim()) patch["webhook_url"] = webhook.trim();
                     if (await save("discord", { discord: patch })) setWebhook("");
                   }}
                 >
@@ -345,7 +345,7 @@ function SettingsPage() {
                   max={10}
                   step={1}
                   value={[cfg.monitor.sensitivity]}
-                  onValueChange={([v]) => upd("monitor", { sensitivity: v })}
+                  onValueChange={([v]) => upd("monitor", { sensitivity: v ?? 5 })}
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -377,7 +377,7 @@ function SettingsPage() {
                   max={90}
                   step={5}
                   value={[Math.round(cfg.monitor.row_match_threshold * 100)]}
-                  onValueChange={([v]) => upd("monitor", { row_match_threshold: v / 100 })}
+                  onValueChange={([v]) => upd("monitor", { row_match_threshold: (v ?? 65) / 100 })}
                 />
               </Field>
               <div>

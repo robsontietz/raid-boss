@@ -4,7 +4,7 @@ import type { RaidEvent } from "@/lib/agent/types";
 import { fmtDateTime } from "@/lib/format";
 import { ColorSwatch, DeliveryBadge } from "./badges";
 
-export function EventTable({ events, empty }: { events: RaidEvent[]; empty?: string }) {
+export function EventTable({ events, empty }: { events: RaidEvent[]; empty?: string | undefined }) {
   if (!events.length) {
     return (
       <p className="py-8 text-center text-muted-foreground">
