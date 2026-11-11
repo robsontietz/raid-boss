@@ -31,12 +31,12 @@ export const Route = createFileRoute("/")({
       { title: "Painel — Guardian Raid Watch" },
       {
         name: "description",
-        content: "Estado em tempo real dos 20 Raid Bosses do Lineage 2 e alertas enviados ao Discord.",
+        content: "Estado em tempo real dos 11 Raid Bosses do Lineage 2 e alertas enviados ao Discord.",
       },
       { property: "og:title", content: "Painel — Guardian Raid Watch" },
       {
         property: "og:description",
-        content: "Estado em tempo real dos 20 Raid Bosses do Lineage 2 e alertas enviados ao Discord.",
+        content: "Estado em tempo real dos 11 Raid Bosses do Lineage 2 e alertas enviados ao Discord.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -213,7 +213,7 @@ function Dashboard() {
         <StatusTile
           icon={Users}
           label="Bosses"
-          value={snapshot?.monitored_count ?? 20}
+          value={snapshot?.monitored_count ?? 11}
           hint={m && m.list_ok !== null ? `${m.valid_rows}/${m.rows} linhas lidas` : "monitorados"}
         />
         <StatusTile

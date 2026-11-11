@@ -1,19 +1,10 @@
-/** The 20 monitored Raid Bosses, in the in-game RAID list order (shown while the agent is offline). */
+/** The 11 monitored Raid Bosses, in the in-game RAID list order (shown while the agent is offline). */
 export const DEFAULT_BOSSES = [
-  { id: "core-of-chaos", name: "Core of Chaos", level: 87 },
-  { id: "orfen-of-chaos", name: "Orfen of Chaos", level: 87 },
-  { id: "chaos-queen-ant", name: "Chaos Queen Ant", level: 87 },
-  { id: "zaken-of-chaos", name: "Zaken of Chaos", level: 87 },
   { id: "gourd", name: "Gourd", level: 87 },
   { id: "immortal-gourd", name: "Immortal Gourd", level: 87 },
-  { id: "kuroboros-high-priest", name: "Kuroboros' High Priest", level: 90 },
   { id: "palibati-queen-themis", name: "Palibati Queen Themis", level: 90 },
-  { id: "monster-bulleroth", name: "Monster Bulleroth", level: 90 },
-  { id: "evil-orc-dephracor", name: "Evil Orc Dephracor", level: 90 },
-  { id: "antharas", name: "Antharas", level: 90 },
   { id: "lilith", name: "Lilith", level: 90 },
   { id: "anakim", name: "Anakim", level: 90 },
-  { id: "katuba", name: "Katuba", level: 90 },
   { id: "floki", name: "Floki", level: 91 },
   { id: "bjorn", name: "Bjorn", level: 91 },
   { id: "ivar", name: "Ivar", level: 91 },

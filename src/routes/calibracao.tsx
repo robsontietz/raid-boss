@@ -45,7 +45,7 @@ function CalibrationPage() {
   const [mode, setMode] = useState<"raid" | "list">("raid");
   const [raid, setRaid] = useState<Point | null>(null);
   const [region, setRegion] = useState<Rect | null>(null);
-  const [rows, setRows] = useState(20);
+  const [rows, setRows] = useState(11);
   const [drag, setDrag] = useState<Point | null>(null);
   const [refResult, setRefResult] = useState<TestResult | null>(null);
   const [cfg, setCfg] = useState<AgentConfig | null>(null);
@@ -58,7 +58,7 @@ function CalibrationPage() {
         setCfg(c);
         setRaid(c.calibration.raid_button);
         setRegion(c.calibration.list_region);
-        setRows(c.calibration.rows || 20);
+        setRows(c.calibration.rows || 11);
       })
       .catch((e) => toast.error((e as Error).message));
   }, [connected, call]);
@@ -168,7 +168,7 @@ function CalibrationPage() {
       <PageHeader
         eyebrow="Assistente"
         title="Calibração"
-        description="Mostre ao agente onde fica o botão RAID e onde aparecem os nomes dos 20 bosses."
+        description="Mostre ao agente onde fica o botão RAID e onde aparecem os nomes dos 11 bosses."
       />
       <ConnectNotice />
 

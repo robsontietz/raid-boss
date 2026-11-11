@@ -43,7 +43,7 @@ def defaults() -> dict:
         "calibration": {
             "raid_button": None,  # {"x": int, "y": int} relativo à área cliente da janela
             "list_region": None,  # {"x","y","w","h"} relativo à área cliente
-            "rows": 20,
+            "rows": 11,
             "client_size": None,  # [w, h] no momento da calibração
         },
         "state_labels": {"gray": "Standby", "red": "In Battle"},
@@ -184,7 +184,7 @@ class ConfigStore:
                         labels[k] = str(v).strip()[:40]
                 d["state_labels"] = labels
             if "bosses" in patch:
-                rows = d["calibration"].get("rows") or 20
+                rows = d["calibration"].get("rows") or 11
                 by_id = {b.get("id"): b for b in patch["bosses"] or [] if isinstance(b, dict)}
                 for b in d["bosses"]:
                     p = by_id.get(b["id"])

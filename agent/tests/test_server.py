@@ -41,8 +41,8 @@ def test_requires_token_and_localhost_host():
             r = await c.get("/api/state", headers={**host, "X-Agent-Token": cfg.token})
             assert r.status == 200
             data = await r.json()
-            assert len(data["bosses"]) == 20
-            assert data["monitored_count"] == 20
+            assert len(data["bosses"]) == 11
+            assert data["monitored_count"] == 11
             r = await c.get("/api/state", headers={"Host": "evil.example.com", "X-Agent-Token": cfg.token})
             assert r.status == 403
 

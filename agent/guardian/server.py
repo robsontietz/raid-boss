@@ -163,7 +163,7 @@ def build_app(config: ConfigStore, monitor: Monitor, hub: Hub) -> web.Applicatio
     async def cal_save(request):
         body = await request.json()
         result = await run_blocking(monitor.save_calibration, body.get("raid_button"), body.get("list_region"),
-                                    int(body.get("rows") or 20))
+                                    int(body.get("rows") or 11))
         return web.json_response({"ok": True, "calibration": result})
 
     async def cal_reference(request):

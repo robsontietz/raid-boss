@@ -19,7 +19,7 @@ ROW_H = 22
 
 
 def render(colors: dict[int, tuple], brightness: float = 1.0, noise: float = 0.0, seed: int = 1) -> np.ndarray:
-    """Desenha a lista RAID sintética: 20 linhas com '[Lv.XX] Nome'."""
+    """Desenha a lista RAID sintética: uma linha por boss monitorado, com '[Lv.XX] Nome'."""
     img = np.zeros((ROW_H * len(DEFAULT_BOSSES), 320, 3), np.uint8)
     img[:] = BG
     for i, (_bid, name, lvl) in enumerate(DEFAULT_BOSSES):
@@ -44,23 +44,23 @@ def make_tracker(confirm=2):
 
 def test_baseline_is_not_a_change():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker()
     assert t.observe(readings_map(base, refs)) == []
-    assert len(t.stable) == 20
+    assert len(t.stable) == len(DEFAULT_BOSSES)
     assert all(s.bucket == "gray" for s in t.stable.values())
 
 
-def test_gray_to_red_on_zaken_is_detected_after_confirmation():
+def test_gray_to_red_on_lilith_is_detected_after_confirmation():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=2)
     t.observe(readings_map(base, refs))
-    battle = render({3: RED})  # Zaken of Chaos é a 4ª linha
+    battle = render({3: RED})  # Lilith é a 4ª linha
     first = t.observe(readings_map(battle, refs))
     assert first == []  # ainda confirmando
     second = t.observe(readings_map(battle, refs))
-    assert [c.boss_id for c in second] == ["zaken-of-chaos"]
+    assert [c.boss_id for c in second] == ["lilith"]
     assert second[0].previous.bucket == "gray"
     assert second[0].current.bucket == "red"
     labels = {"gray": "Standby", "red": "In Battle"}
@@ -68,10 +68,10 @@ def test_gray_to_red_on_zaken_is_detected_after_confirmation():
     assert state_label(second[0].current.bucket, labels) == "In Battle"
 
 
-def test_any_of_the_20_bosses_can_trigger():
+def test_any_of_the_11_bosses_can_trigger():
     base = render({})
-    refs = row_masks(base, 20)
-    for idx in (0, 10, 19):
+    refs = row_masks(base, len(DEFAULT_BOSSES))
+    for idx in (0, 5, 10):
         t = make_tracker(confirm=1)
         t.observe(readings_map(base, refs))
         ch = t.observe(readings_map(render({idx: RED}), refs))
@@ -80,7 +80,7 @@ def test_any_of_the_20_bosses_can_trigger():
 
 def test_staying_in_new_color_does_not_repeat_notification():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=1)
     t.observe(readings_map(base, refs))
     battle = render({3: RED})
@@ -91,18 +91,18 @@ def test_staying_in_new_color_does_not_repeat_notification():
 
 def test_new_change_later_notifies_again():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=1)
     t.observe(readings_map(base, refs))
     assert len(t.observe(readings_map(render({3: RED}), refs))) == 1
     back = t.observe(readings_map(base, refs))
-    assert [c.boss_id for c in back] == ["zaken-of-chaos"]
+    assert [c.boss_id for c in back] == ["lilith"]
     assert back[0].current.bucket == "gray"
 
 
 def test_brightness_and_noise_variation_is_not_a_change():
     base = render({3: RED})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=1)
     t.observe(readings_map(base, refs))
     for b, n, s in ((0.8, 0, 1), (1.12, 0, 1), (1.0, 4, 2), (0.9, 3, 3)):
@@ -111,10 +111,10 @@ def test_brightness_and_noise_variation_is_not_a_change():
 
 def test_unknown_color_is_reported_without_assuming_meaning():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=1)
     t.observe(readings_map(base, refs))
-    ch = t.observe(readings_map(render({14: YELLOW}), refs))
+    ch = t.observe(readings_map(render({5: YELLOW}), refs))
     assert [c.boss_id for c in ch] == ["floki"]
     assert ch[0].current.bucket == "yellow"
     assert state_label("yellow", {"gray": "Standby", "red": "In Battle"}) == "Outra cor (Amarelo)"
@@ -122,7 +122,7 @@ def test_unknown_color_is_reported_without_assuming_meaning():
 
 def test_capture_failure_is_never_a_change():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=1)
     t.observe(readings_map(base, refs))
     black = np.zeros_like(base)
@@ -137,15 +137,15 @@ def test_capture_failure_is_never_a_change():
 
 def test_different_text_in_row_is_rejected_by_reference():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     shuffled = np.roll(base, ROW_H * 3, axis=0)  # nomes em outras linhas
-    rs = analyze_list(shuffled, 20, refs)
-    assert sum(1 for r in rs if r.valid) < 14
+    rs = analyze_list(shuffled, len(DEFAULT_BOSSES), refs)
+    assert sum(1 for r in rs if r.valid) < 8
 
 
 def test_single_glitch_frame_does_not_notify_with_confirmation():
     base = render({})
-    refs = row_masks(base, 20)
+    refs = row_masks(base, len(DEFAULT_BOSSES))
     t = make_tracker(confirm=2)
     t.observe(readings_map(base, refs))
     assert t.observe(readings_map(render({5: RED}), refs)) == []  # 1 quadro estranho

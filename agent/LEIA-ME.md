@@ -1,7 +1,7 @@
 # GUARDIAN RAID WATCH — Agente Windows
 
 Agente local que fica de olho na lista **RAID** do Lineage 2, percebe quando a cor do nome de
-um dos 20 Raid Bosses muda e avisa no Discord.
+um dos 11 Raid Bosses muda e avisa no Discord.
 
 ## Requisitos
 
@@ -23,7 +23,7 @@ um dos 20 Raid Bosses muda e avisa no Discord.
 4. Em **Calibração**:
    1. clique em *Capturar tela do jogo*;
    2. clique no botão **RAID** da imagem;
-   3. arraste um retângulo cobrindo **somente os nomes** dos 20 bosses (do primeiro ao último);
+   3. arraste um retângulo cobrindo **somente os nomes** dos 11 bosses (do primeiro ao último);
    4. confira se as linhas desenhadas caem em cima de cada nome e salve;
    5. clique em *Capturar referência* (com a lista visível).
 5. Em **Configurações**, cole o Webhook do Discord e use *Testar Discord*.
