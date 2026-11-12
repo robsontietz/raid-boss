@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAgent } from "@/lib/agent/AgentProvider";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { AgentConfig, TestResult } from "@/lib/agent/types";
 
 export const Route = createFileRoute("/calibracao")({
@@ -40,6 +41,8 @@ type Shot = { image: string; width: number; height: number; calibration: AgentCo
 function CalibrationPage() {
   const { call, connection } = useAgent();
   const connected = connection === "connected";
+  const { t } = useI18n();
+  const c = t.calib;
   const [shot, setShot] = useState<Shot | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [mode, setMode] = useState<"raid" | "list">("raid");
@@ -68,7 +71,7 @@ function CalibrationPage() {
     try {
       const s = await call<Shot>("/api/calibration/screenshot", { method: "POST" });
       setShot(s);
-      toast.success(`Tela capturada (${s.width}×${s.height})`);
+      toast.success(c.captured(s.width, s.height));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -120,7 +123,7 @@ function CalibrationPage() {
         method: "POST",
         body: { raid_button: raid, list_region: region, rows },
       });
-      toast.success("Calibração salva. Agora capture a referência da lista.");
+      toast.success(c.saved);
       setRefResult(null);
     } catch (e) {
       toast.error((e as Error).message);
@@ -134,7 +137,7 @@ function CalibrationPage() {
     try {
       const r = await call<TestResult>("/api/calibration/reference", { method: "POST", body: { click: true } });
       setRefResult(r);
-      if (r.ok) toast.success("Referência salva");
+      if (r.ok) toast.success(c.refSaved);
       else toast.error(r.message);
     } catch (e) {
       setRefResult({ ok: false, message: (e as Error).message });
@@ -152,7 +155,7 @@ function CalibrationPage() {
         body: { bosses: cfg.bosses.map((b) => ({ id: b.id, row: b.row, enabled: b.enabled })) },
       });
       setCfg(res.config);
-      toast.success("Ordem dos bosses salva");
+      toast.success(c.orderSaved);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -166,19 +169,19 @@ function CalibrationPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Assistente"
-        title="Calibração"
-        description="Mostre ao agente onde fica o botão RAID e onde aparecem os nomes dos 11 bosses."
+        eyebrow={c.eyebrow}
+        title={c.title}
+        description={c.desc}
       />
       <ConnectNotice />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <Panel
-          title="1. Tela do jogo"
-          description="Deixe a lista RAID aberta no jogo e capture a tela. O jogo vem para frente por um instante."
+          title={c.screenTitle}
+          description={c.screenDesc}
           actions={
             <Button variant="gold" onClick={capture} disabled={!connected || !!loading}>
-              {loading === "shot" ? <Loader2 className="animate-spin" /> : <Camera />} Capturar tela do jogo
+              {loading === "shot" ? <Loader2 className="animate-spin" /> : <Camera />} {c.capture}
             </Button>
           }
         >
@@ -186,17 +189,17 @@ function CalibrationPage() {
             <div className="grid min-h-72 place-items-center rounded border border-dashed border-border text-center text-muted-foreground">
               <div>
                 <ScanLine className="mx-auto mb-2 size-8 text-gold-dim" />
-                A captura do jogo aparecerá aqui.
+                {c.placeholder}
               </div>
             </div>
           ) : (
             <>
               <div className="mb-3 flex flex-wrap gap-2">
                 <Button variant={mode === "raid" ? "gold" : "frame"} size="sm" onClick={() => setMode("raid")}>
-                  <Crosshair /> 2. Clique no botão RAID
+                  <Crosshair /> {c.stepRaid}
                 </Button>
                 <Button variant={mode === "list" ? "gold" : "frame"} size="sm" onClick={() => setMode("list")}>
-                  <SquareDashed /> 3. Arraste sobre os nomes
+                  <SquareDashed /> {c.stepList}
                 </Button>
               </div>
               <div className="overflow-auto rounded border border-border">
@@ -207,7 +210,7 @@ function CalibrationPage() {
                   onPointerMove={onMove}
                   onPointerUp={onUp}
                 >
-                  <img src={shot.image} alt="Tela do Lineage 2 capturada" className="block w-full" draggable={false} />
+                  <img src={shot.image} alt={c.shotAlt} className="block w-full" draggable={false} />
                   {raid && (
                     <div
                       className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
@@ -245,27 +248,27 @@ function CalibrationPage() {
                 </div>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Cubra somente os nomes, do primeiro ao último boss. As linhas douradas devem cair em cima de cada nome.
+                {c.coverHint}
               </p>
             </>
           )}
         </Panel>
 
         <div className="space-y-6">
-          <Panel title="Ajustes">
+          <Panel title={c.adjust}>
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="eyebrow">Botão RAID</p>
+                  <p className="eyebrow">{c.raidButton}</p>
                   <p className="data-mono">{raid ? `${raid.x}, ${raid.y}` : "—"}</p>
                 </div>
                 <div>
-                  <p className="eyebrow">Área da lista</p>
+                  <p className="eyebrow">{c.listArea}</p>
                   <p className="data-mono">{region ? `${region.w}×${region.h}` : "—"}</p>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Número de linhas na área</Label>
+                <Label>{c.rows}</Label>
                 <Input type="number" min={1} max={40} value={rows} onChange={(e) => setRows(Number(e.target.value) || 1)} />
               </div>
               <Button
@@ -274,15 +277,14 @@ function CalibrationPage() {
                 disabled={!connected || !raid || !region || region.w < 20 || region.h < 20 || !!loading}
                 onClick={saveCalibration}
               >
-                {loading === "save" ? <Loader2 className="animate-spin" /> : <Save />} Salvar calibração
+                {loading === "save" ? <Loader2 className="animate-spin" /> : <Save />} {c.save}
               </Button>
               <div className="divider-ornament" />
               <p className="text-muted-foreground">
-                4. Com a lista visível, capture a referência. O agente clica 2× no RAID, guarda o formato de cada nome e
-                registra as cores atuais como ponto de partida (sem notificar).
+                {c.refHelp}
               </p>
               <Button variant="frame" className="w-full" disabled={!connected || !!loading} onClick={captureReference}>
-                {loading === "ref" ? <Loader2 className="animate-spin" /> : <ScanLine />} Capturar referência
+                {loading === "ref" ? <Loader2 className="animate-spin" /> : <ScanLine />} {c.captureRef}
               </Button>
               <Button
                 variant="ghost"
@@ -291,13 +293,13 @@ function CalibrationPage() {
                 onClick={async () => {
                   try {
                     await call("/api/monitor/reset-states", { method: "POST" });
-                    toast.success("Estados apagados; a próxima leitura será o novo ponto de partida.");
+                    toast.success(c.resetDone);
                   } catch (e) {
                     toast.error((e as Error).message);
                   }
                 }}
               >
-                <RotateCcw /> Recomeçar estados dos bosses
+                <RotateCcw /> {c.reset}
               </Button>
             </div>
           </Panel>
@@ -305,23 +307,23 @@ function CalibrationPage() {
       </div>
 
       {refResult && (
-        <Panel className="mt-6" title="Resultado da referência">
+        <Panel className="mt-6" title={c.refResult}>
           <TestResultView result={refResult} />
         </Panel>
       )}
 
       <Panel
         className="mt-6"
-        title="Ordem dos bosses na lista"
-        description="Linha de cada boss dentro da área marcada (1 = primeira linha). Desative os que não quiser monitorar."
+        title={c.orderTitle}
+        description={c.orderDesc}
         actions={
           <Button variant="gold" size="sm" disabled={!cfg || !!loading} onClick={saveMapping}>
-            <Save /> Salvar ordem
+            <Save /> {c.saveOrder}
           </Button>
         }
       >
         {!cfg ? (
-          <p className="text-sm text-muted-foreground">Conecte o agente para editar.</p>
+          <p className="text-sm text-muted-foreground">{c.connectToEdit}</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {cfg.bosses.map((b, i) => (

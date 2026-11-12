@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { BossMonitorStatus, DiscordDelivery } from "@/lib/agent/types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { localizeState } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
 /** Swatch of the color actually detected in-game (data-driven, so it uses an inline color). */
@@ -30,6 +32,7 @@ export function StateChip({
   bucket: string | null | undefined;
   hex?: string | null;
 }) {
+  const { lang } = useI18n();
   if (!state) return <span className="text-muted-foreground">—</span>;
   const tone =
     bucket === "red"
@@ -45,41 +48,44 @@ export function StateChip({
       )}
     >
       {bucket !== "red" && bucket !== "gray" && <ColorSwatch hex={hex} className="size-2.5" />}
-      {state}
+      {localizeState(state, lang)}
     </span>
   );
 }
 
-const MONITOR_LABEL: Record<BossMonitorStatus, { label: string; variant: "success" | "warning" | "danger" | "muted" | "gold" }> = {
-  ok: { label: "Monitorando", variant: "success" },
-  confirming: { label: "Confirmando mudança", variant: "gold" },
-  unreadable: { label: "Não lido", variant: "danger" },
-  waiting: { label: "Aguardando 1ª leitura", variant: "muted" },
-  disabled: { label: "Desativado", variant: "muted" },
+type Variant = "success" | "warning" | "danger" | "muted" | "gold";
+
+const MONITOR_VARIANT: Record<BossMonitorStatus, Variant> = {
+  ok: "success",
+  confirming: "gold",
+  unreadable: "danger",
+  waiting: "muted",
+  disabled: "muted",
 };
 
 export function MonitorStatusBadge({ status, reason }: { status: BossMonitorStatus; reason?: string | null }) {
-  const m = MONITOR_LABEL[status];
+  const { t } = useI18n();
   return (
-    <Badge variant={m.variant} title={reason ?? undefined}>
-      {m.label}
+    <Badge variant={MONITOR_VARIANT[status]} title={reason ?? undefined}>
+      {t.monitor[status]}
     </Badge>
   );
 }
 
-const DELIVERY: Record<DiscordDelivery, { label: string; variant: "success" | "warning" | "danger" | "muted" | "gold" }> = {
-  pending: { label: "Enviando…", variant: "gold" },
-  retrying: { label: "Tentando de novo", variant: "warning" },
-  sent: { label: "Enviado", variant: "success" },
-  failed: { label: "Falhou", variant: "danger" },
-  not_configured: { label: "Discord não configurado", variant: "muted" },
+const DELIVERY_VARIANT: Record<DiscordDelivery, Variant> = {
+  pending: "gold",
+  retrying: "warning",
+  sent: "success",
+  failed: "danger",
+  not_configured: "muted",
 };
 
 export function DeliveryBadge({ status, error }: { status: DiscordDelivery; error?: string | null }) {
-  const d = DELIVERY[status] ?? DELIVERY.pending;
+  const { t } = useI18n();
+  const key: DiscordDelivery = status in DELIVERY_VARIANT ? status : "pending";
   return (
-    <Badge variant={d.variant} title={error ?? undefined}>
-      {d.label}
+    <Badge variant={DELIVERY_VARIANT[key]} title={error ?? undefined}>
+      {t.delivery[key]}
     </Badge>
   );
 }

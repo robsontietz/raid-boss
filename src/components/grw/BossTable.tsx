@@ -1,6 +1,8 @@
 import type { BossSnapshot } from "@/lib/agent/types";
 import { DEFAULT_BOSSES } from "@/lib/bosses";
 import { fmtAgo, fmtTime } from "@/lib/format";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { colorName } from "@/lib/i18n/messages";
 import { ColorSwatch, MonitorStatusBadge, StateChip } from "./badges";
 
 const OFFLINE: BossSnapshot[] = DEFAULT_BOSSES.map((b, i) => ({
@@ -20,6 +22,7 @@ const OFFLINE: BossSnapshot[] = DEFAULT_BOSSES.map((b, i) => ({
 }));
 
 export function BossTable({ bosses }: { bosses: BossSnapshot[] | undefined }) {
+  const { t, lang } = useI18n();
   const rows = bosses && bosses.length ? bosses : OFFLINE;
   let lastLevel = 0;
   return (
@@ -27,12 +30,12 @@ export function BossTable({ bosses }: { bosses: BossSnapshot[] | undefined }) {
       <table className="w-full min-w-[760px] text-left">
         <thead>
           <tr className="border-b border-border text-xs uppercase tracking-widest text-muted-foreground">
-            <th className="px-3 py-2 font-display font-semibold">Boss</th>
-            <th className="px-3 py-2 font-display font-semibold">Nível</th>
-            <th className="px-3 py-2 font-display font-semibold">Estado atual</th>
-            <th className="px-3 py-2 font-display font-semibold">Cor detectada</th>
-            <th className="px-3 py-2 font-display font-semibold">Última alteração</th>
-            <th className="px-3 py-2 font-display font-semibold">Monitoramento</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.boss}</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.level}</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.state}</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.color}</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.lastChange}</th>
+            <th className="px-3 py-2 font-display font-semibold">{t.bossTable.monitoring}</th>
           </tr>
         </thead>
         <tbody>
@@ -57,7 +60,7 @@ export function BossTable({ bosses }: { bosses: BossSnapshot[] | undefined }) {
                 <td className="px-3 py-2.5">
                   <span className="inline-flex items-center gap-2 text-sm">
                     <ColorSwatch hex={b.color_hex} />
-                    <span className="text-foreground">{b.color_name ?? "—"}</span>
+                    <span className="text-foreground">{colorName(b.bucket, lang, b.color_name) ?? "—"}</span>
                     {b.color_hex && (
                       <span className="data-mono text-xs text-muted-foreground">{b.color_hex}</span>
                     )}
@@ -66,8 +69,8 @@ export function BossTable({ bosses }: { bosses: BossSnapshot[] | undefined }) {
                 <td className="px-3 py-2.5 text-sm">
                   {b.last_change ? (
                     <>
-                      <span className="data-mono text-foreground">{fmtTime(b.last_change)}</span>{" "}
-                      <span className="text-muted-foreground">{fmtAgo(b.last_change)}</span>
+                      <span className="data-mono text-foreground">{fmtTime(b.last_change, lang)}</span>{" "}
+                      <span className="text-muted-foreground">{fmtAgo(b.last_change, lang)}</span>
                     </>
                   ) : (
                     <span className="text-muted-foreground">—</span>

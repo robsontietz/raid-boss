@@ -28,3 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- All panel UI text lives in `src/lib/i18n/messages.ts` (Portuguese `pt`, English `en` typed as `Messages`) and is read via `useI18n()`; never hardcode visible text in components. Why: the header flag switch must flip every panel text at once.
+- Messages produced by the Windows agent (logs, errors, test messages) are shown as sent; only the agent's default state/color names are translated client-side via `localizeState`/`colorName`. Why: the agent runs on the user's PC and is not language-aware.

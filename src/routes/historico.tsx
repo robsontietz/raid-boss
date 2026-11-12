@@ -9,6 +9,7 @@ import { EventTable } from "@/components/grw/EventTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAgent } from "@/lib/agent/AgentProvider";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export const Route = createFileRoute("/historico")({
   head: () => ({
@@ -33,16 +34,18 @@ export const Route = createFileRoute("/historico")({
 function HistoryPage() {
   const { events, call, connection } = useAgent();
   const [q, setQ] = useState("");
+  const { t } = useI18n();
+  const h = t.history;
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return s ? events.filter((e) => e.boss_name.toLowerCase().includes(s)) : events;
   }, [events, q]);
 
   async function clear() {
-    if (!confirm("Apagar todo o histórico de eventos?")) return;
+    if (!confirm(h.confirmClear)) return;
     try {
       await call("/api/events", { method: "DELETE" });
-      toast.success("Histórico apagado");
+      toast.success(h.cleared);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -51,12 +54,12 @@ function HistoryPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Registro"
-        title="Histórico de eventos"
-        description="Cada linha é uma mudança de cor confirmada, com o resultado do envio ao Discord."
+        eyebrow={h.eyebrow}
+        title={h.title}
+        description={h.desc}
         actions={
           <Button variant="frame" onClick={clear} disabled={connection !== "connected" || !events.length}>
-            <Trash2 /> Limpar histórico
+            <Trash2 /> {h.clear}
           </Button>
         }
       />
@@ -64,15 +67,15 @@ function HistoryPage() {
       <Panel
         actions={
           <Input
-            placeholder="Filtrar por boss…"
+            placeholder={h.filter}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-64"
           />
         }
-        title={`${filtered.length} ${filtered.length === 1 ? "evento" : "eventos"}`}
+        title={h.count(filtered.length)}
       >
-        <EventTable events={filtered} empty={q ? "Nenhum evento para esse boss." : undefined} />
+        <EventTable events={filtered} empty={q ? h.noMatch : undefined} />
       </Panel>
     </>
   );

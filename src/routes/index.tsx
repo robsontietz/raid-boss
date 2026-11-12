@@ -24,6 +24,7 @@ import { StatusTile } from "@/components/grw/StatusTile";
 import { Button } from "@/components/ui/button";
 import { useAgent, useNow } from "@/lib/agent/AgentProvider";
 import { fmtAgo, fmtCountdown, fmtTime } from "@/lib/format";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,6 +49,8 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const { snapshot, events, connection, call } = useAgent();
   const now = useNow(1000);
+  const { t, lang } = useI18n();
+  const d = t.dash;
   const [busy, setBusy] = useState<string | null>(null);
   const connected = connection === "connected";
   const m = snapshot?.monitoring;
@@ -69,12 +72,12 @@ function Dashboard() {
   const discordValue = !connected
     ? "—"
     : !discord?.configured
-      ? "Não configurado"
+      ? d.discordNotSet
       : discord.status === "ok"
-        ? "Conectado"
+        ? d.discordOk
         : discord.status === "error"
-          ? "Com erro"
-          : "Configurado";
+          ? d.discordError
+          : d.discordSet;
   const discordTone =
     !connected || !discord?.configured
       ? "warning"
@@ -92,7 +95,7 @@ function Dashboard() {
       <section className="relative -mx-4 mb-8 overflow-hidden border-b border-border">
         <img
           src={banner}
-          alt="Cidadela sombria sob a lua vermelha"
+          alt={d.bannerAlt}
           width={1920}
           height={640}
           className="absolute inset-0 h-full w-full object-cover object-right"
@@ -106,7 +109,7 @@ function Dashboard() {
             <span className="text-foreground">RAID WATCH</span>
           </h1>
           <p className="mt-3 max-w-xl text-lg text-muted-foreground">
-            Vigia a lista RAID enquanto você joga e avisa no Discord quando qualquer boss muda de cor.
+            {d.tagline}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             {active ? (
@@ -114,27 +117,27 @@ function Dashboard() {
                 variant="ember"
                 size="lg"
                 disabled={!!busy}
-                onClick={() => act("/api/monitor/stop", "Monitoramento interrompido")}
+                onClick={() => act("/api/monitor/stop", d.stopped)}
               >
-                <Square /> Parar monitoramento
+                <Square /> {d.stop}
               </Button>
             ) : (
               <Button
                 variant="gold"
                 size="lg"
                 disabled={!connected || !!busy}
-                onClick={() => act("/api/monitor/start", "Monitoramento iniciado")}
+                onClick={() => act("/api/monitor/start", d.started)}
               >
-                <Play /> Iniciar monitoramento
+                <Play /> {d.start}
               </Button>
             )}
             <Button
               variant="frame"
               size="lg"
               disabled={!connected || !!busy}
-              onClick={() => act("/api/monitor/run-now", "Atualização da lista solicitada")}
+              onClick={() => act("/api/monitor/run-now", d.refreshRequested)}
             >
-              <RefreshCw className={busy === "/api/monitor/run-now" ? "animate-spin" : ""} /> Atualizar agora
+              <RefreshCw className={busy === "/api/monitor/run-now" ? "animate-spin" : ""} /> {d.refresh}
             </Button>
           </div>
         </div>
@@ -146,13 +149,13 @@ function Dashboard() {
         <div className="panel-frame mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
           <AlertTriangle className="size-6 shrink-0 text-warning" />
           <p className="flex-1 text-sm">
-            <span className="font-semibold">Falta calibrar.</span>{" "}
+            <span className="font-semibold">{d.setupTitle}</span>{" "}
             <span className="text-muted-foreground">
-              Marque o botão RAID, a área da lista e capture a referência antes de iniciar.
+              {d.setupBody}
             </span>
           </p>
           <Button asChild variant="gold" size="sm">
-            <Link to="/calibracao">Abrir calibração</Link>
+            <Link to="/calibracao">{d.openCalibration}</Link>
           </Button>
         </div>
       )}
@@ -163,7 +166,7 @@ function Dashboard() {
           <div className="text-sm">
             <p className="font-semibold text-destructive">{m.last_error}</p>
             <p className="text-muted-foreground">
-              {fmtTime(m.last_error_at)} · Nenhuma alteração é registrada enquanto o problema persistir.
+              {fmtTime(m.last_error_at, lang)} · {d.errorNote}
             </p>
           </div>
         </div>
@@ -172,22 +175,22 @@ function Dashboard() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-7">
         <StatusTile
           icon={Activity}
-          label="Monitoramento"
-          value={active ? "ATIVO" : "PARADO"}
+          label={d.monitoring}
+          value={active ? d.active : d.stoppedValue}
           tone={active ? "success" : "danger"}
           hint={connected ? m?.status_text : "—"}
         />
         <StatusTile
           icon={MonitorSmartphone}
-          label="Agente Windows"
-          value={connected ? "Conectado" : "Offline"}
+          label={d.agent}
+          value={connected ? d.connected : d.offline}
           tone={connected ? "success" : "danger"}
           hint={
             connected
               ? snapshot?.window
-                ? `Jogo ${snapshot.window.width}×${snapshot.window.height}`
-                : "Jogo não localizado"
-              : "Abra o iniciar.bat"
+                ? d.game(snapshot.window.width, snapshot.window.height)
+                : d.gameNotFound
+              : d.openBat
           }
         />
         <StatusTile
@@ -195,40 +198,40 @@ function Dashboard() {
           label="Discord"
           value={discordValue}
           tone={discordTone}
-          hint={discord?.last_ok ? `Último envio ${fmtTime(discord.last_ok)}` : discord?.last_error ?? undefined}
+          hint={discord?.last_ok ? d.lastSent(fmtTime(discord.last_ok, lang)) : discord?.last_error ?? undefined}
         />
         <StatusTile
           icon={Clock}
-          label="Última atualização"
-          value={<span className="data-mono text-xl">{fmtTime(m?.last_update)}</span>}
-          hint={fmtAgo(m?.last_update) || "Sem leituras"}
+          label={d.lastUpdate}
+          value={<span className="data-mono text-xl">{fmtTime(m?.last_update, lang)}</span>}
+          hint={fmtAgo(m?.last_update, lang) || d.noReadings}
         />
         <StatusTile
           icon={Hourglass}
-          label="Próxima em"
-          value={<span className="data-mono text-xl">{active ? fmtCountdown(m?.next_update_at, now) : "—"}</span>}
-          hint={m ? `Intervalo de ${m.interval_seconds}s` : undefined}
+          label={d.nextIn}
+          value={<span className="data-mono text-xl">{active ? fmtCountdown(m?.next_update_at, now, lang) : "—"}</span>}
+          hint={m ? d.every(m.interval_seconds) : undefined}
           tone="gold"
         />
         <StatusTile
           icon={Users}
-          label="Bosses"
+          label={d.bosses}
           value={snapshot?.monitored_count ?? 11}
-          hint={m && m.list_ok !== null ? `${m.valid_rows}/${m.rows} linhas lidas` : "monitorados"}
+          hint={m && m.list_ok !== null ? d.rowsRead(m.valid_rows, m.rows) : d.monitored}
         />
         <StatusTile
           icon={Swords}
-          label="Alterações"
+          label={d.changes}
           value={snapshot?.changes_count ?? 0}
           tone="gold"
-          hint="detectadas"
+          hint={d.detected}
         />
       </div>
 
       <Panel
         className="mt-6"
         title="Raid Bosses"
-        description="Cinza = Standby · Vermelho = In Battle · outras cores aparecem como foram detectadas."
+        description={d.bossesDesc}
       >
         <BossTable bosses={snapshot?.bosses} />
       </Panel>
@@ -236,19 +239,19 @@ function Dashboard() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Panel
           className="lg:col-span-2"
-          title="Últimas alterações"
+          title={d.latest}
           actions={
             <Button asChild variant="frame" size="sm">
-              <Link to="/historico">Ver histórico</Link>
+              <Link to="/historico">{d.viewHistory}</Link>
             </Button>
           }
         >
           <EventTable events={events.slice(0, 6)} />
         </Panel>
-        <Panel title="Registro do agente" description="Erros de captura e comunicação aparecem aqui.">
+        <Panel title={d.log} description={d.logDesc}>
           <div className="data-mono max-h-80 space-y-1.5 overflow-y-auto text-xs">
             {(snapshot?.logs ?? []).length === 0 && (
-              <p className="text-muted-foreground">Sem registros.</p>
+              <p className="text-muted-foreground">{d.noLogs}</p>
             )}
             {[...(snapshot?.logs ?? [])].reverse().map((l, i) => (
               <p
@@ -261,7 +264,7 @@ function Dashboard() {
                       : "text-muted-foreground"
                 }
               >
-                <span className="text-gold-dim">{fmtTime(l.at)}</span> {l.message}
+                <span className="text-gold-dim">{fmtTime(l.at, lang)}</span> {l.message}
               </p>
             ))}
           </div>

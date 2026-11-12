@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAgent } from "@/lib/agent/AgentProvider";
 import type { AgentConfig, TestResult } from "@/lib/agent/types";
 import { COLOR_BUCKETS, DEFAULT_AGENT_URL } from "@/lib/bosses";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -77,6 +78,8 @@ function SwitchRow({
 function SettingsPage() {
   const { agentUrl, token, setCredentials, connection, connectionError, call, hydrated } = useAgent();
   const connected = connection === "connected";
+  const { t } = useI18n();
+  const st = t.settings;
 
   const [urlInput, setUrlInput] = useState(DEFAULT_AGENT_URL);
   const [tokenInput, setTokenInput] = useState("");
@@ -106,7 +109,7 @@ function SettingsPage() {
     try {
       const res = await call<{ config: AgentConfig }>("/api/config", { method: "PUT", body: patch });
       setCfg(res.config);
-      toast.success("Configurações salvas no agente");
+      toast.success(st.saved);
       return true;
     } catch (e) {
       toast.error((e as Error).message);
@@ -146,26 +149,26 @@ function SettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Ajustes"
-        title="Configurações"
-        description="Tudo fica salvo no arquivo de configuração do agente, no seu computador."
+        eyebrow={st.eyebrow}
+        title={st.title}
+        description={st.desc}
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
-          title="Conexão com o agente"
-          description="O agente roda no PC do jogo e só aceita conexões deste mesmo computador."
+          title={st.connTitle}
+          description={st.connDesc}
         >
           <div className="space-y-4">
-            <Field label="Endereço do agente" hint="Padrão: http://127.0.0.1:8765">
+            <Field label={st.address} hint={st.addressHint}>
               <Input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} />
             </Field>
-            <Field label="Token de acesso" hint="Aparece na janela do agente ao abrir o iniciar.bat.">
+            <Field label={st.token} hint={st.tokenHint}>
               <Input
                 type="password"
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
-                placeholder="Cole o token aqui"
+                placeholder={st.tokenPlaceholder}
               />
             </Field>
             <div className="flex flex-wrap items-center gap-3">
@@ -174,39 +177,38 @@ function SettingsPage() {
                 onClick={() => setCredentials(urlInput, tokenInput)}
                 disabled={!tokenInput.trim()}
               >
-                <Plug /> Conectar
+                <Plug /> {st.connect}
               </Button>
               <span className="inline-flex items-center gap-2 text-sm">
                 <PulseDot tone={connection === "idle" ? "muted" : connTone} />
                 {connection === "connected"
-                  ? "Conectado"
+                  ? t.conn.connectedShort
                   : connection === "idle"
-                    ? "Não configurado"
+                    ? t.conn.idleShort
                     : connection === "connecting"
-                      ? "Conectando…"
+                      ? t.conn.connecting
                       : connectionError}
               </span>
             </div>
             {connection === "offline" && (
               <p className="text-xs text-muted-foreground">
-                Dica: abra este painel no navegador do mesmo PC em que o agente está rodando. Se o
-                navegador perguntar sobre acesso à rede local, clique em Permitir.
+                {st.offlineTip}
               </p>
             )}
           </div>
         </Panel>
 
-        <Panel title="Discord" description="As notificações são enviadas pelo agente, via Webhook.">
+        <Panel title="Discord" description={st.discordDesc}>
           {!cfg ? (
             <Waiting connected={connected} />
           ) : (
             <div className="space-y-4">
               <Field
-                label="URL do Webhook"
+                label={st.webhook}
                 hint={
                   cfg.discord.webhook_set
-                    ? `Salvo: ${cfg.discord.webhook_masked}. Cole uma nova URL para trocar.`
-                    : "Discord > Configurações do canal > Integrações > Webhooks > Copiar URL."
+                    ? st.webhookSaved(cfg.discord.webhook_masked)
+                    : st.webhookHint
                 }
               >
                 <Input
@@ -217,7 +219,7 @@ function SettingsPage() {
                 />
               </Field>
               <SwitchRow
-                label="Enviar notificações"
+                label={st.sendNotifications}
                 checked={cfg.discord.enabled}
                 onChange={(v) => upd("discord", { enabled: v })}
               />
@@ -231,14 +233,14 @@ function SettingsPage() {
                     if (await save("discord", { discord: patch })) setWebhook("");
                   }}
                 >
-                  <Save /> Salvar
+                  <Save /> {st.save}
                 </Button>
                 <Button
                   variant="frame"
                   disabled={!!testing || !cfg.discord.webhook_set}
                   onClick={() => runTest("discord", "/api/test/discord")}
                 >
-                  {testing === "discord" ? <Loader2 className="animate-spin" /> : <Bell />} Testar Discord
+                  {testing === "discord" ? <Loader2 className="animate-spin" /> : <Bell />} {st.testDiscord}
                 </Button>
               </div>
               {test?.kind === "discord" && <TestResultView result={test.result} />}
@@ -246,13 +248,13 @@ function SettingsPage() {
           )}
         </Panel>
 
-        <Panel title="Ciclo de atualização" description="Como e quando o agente clica no botão RAID.">
+        <Panel title={st.cycleTitle} description={st.cycleDesc}>
           {!cfg ? (
             <Waiting connected={connected} />
           ) : (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
-                <Field label="Intervalo (s)" hint="Entre atualizações">
+                <Field label={st.interval} hint={st.intervalHint}>
                   <Input
                     type="number"
                     min={5}
@@ -260,7 +262,7 @@ function SettingsPage() {
                     onChange={(e) => upd("monitor", { interval_seconds: Number(e.target.value) })}
                   />
                 </Field>
-                <Field label="Entre os 2 cliques (ms)">
+                <Field label={st.clickDelay}>
                   <Input
                     type="number"
                     min={50}
@@ -268,7 +270,7 @@ function SettingsPage() {
                     onChange={(e) => upd("monitor", { click_delay_ms: Number(e.target.value) })}
                   />
                 </Field>
-                <Field label="Espera após clicar (ms)" hint="Antes de capturar">
+                <Field label={st.afterWait} hint={st.afterWaitHint}>
                   <Input
                     type="number"
                     min={100}
@@ -277,7 +279,7 @@ function SettingsPage() {
                   />
                 </Field>
               </div>
-              <Field label="Modo de clique">
+              <Field label={st.clickMode}>
                 <Select
                   value={cfg.monitor.click_mode}
                   onValueChange={(v) => upd("monitor", { click_mode: v as "mouse" | "background" })}
@@ -286,25 +288,25 @@ function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mouse">Mouse (mais compatível, move o cursor rapidamente)</SelectItem>
-                    <SelectItem value="background">Segundo plano (não move o cursor; nem todo cliente aceita)</SelectItem>
+                    <SelectItem value="mouse">{st.modeMouse}</SelectItem>
+                    <SelectItem value="background">{st.modeBackground}</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
               <SwitchRow
-                label="Devolver o cursor ao lugar"
-                hint="Depois dos cliques, o mouse volta para onde estava."
+                label={st.restoreMouse}
+                hint={st.restoreMouseHint}
                 checked={cfg.monitor.restore_mouse}
                 onChange={(v) => upd("monitor", { restore_mouse: v })}
               />
               <SwitchRow
-                label="Trazer o jogo para frente antes de clicar"
-                hint="Desligado: se outra janela estiver na frente, o ciclo espera em vez de clicar."
+                label={st.bringFront}
+                hint={st.bringFrontHint}
                 checked={cfg.window.bring_to_front}
                 onChange={(v) => upd("window", { bring_to_front: v })}
               />
               <SwitchRow
-                label="Iniciar monitoramento ao abrir o agente"
+                label={st.autoStart}
                 checked={cfg.monitor.auto_start}
                 onChange={(v) => upd("monitor", { auto_start: v })}
               />
@@ -325,20 +327,20 @@ function SettingsPage() {
                   })
                 }
               >
-                <Save /> Salvar
+                <Save /> {st.save}
               </Button>
             </div>
           )}
         </Panel>
 
-        <Panel title="Detecção de cores" description="Evita confundir brilho e sombras com mudança real.">
+        <Panel title={st.detectTitle} description={st.detectDesc}>
           {!cfg ? (
             <Waiting connected={connected} />
           ) : (
             <div className="space-y-5">
               <Field
-                label={`Sensibilidade: ${cfg.monitor.sensitivity}/10`}
-                hint="Mais alto percebe diferenças de tom menores. Padrão 5."
+                label={st.sensitivity(cfg.monitor.sensitivity)}
+                hint={st.sensitivityHint}
               >
                 <Slider
                   min={1}
@@ -349,7 +351,7 @@ function SettingsPage() {
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Leituras para confirmar" hint="Leituras iguais seguidas antes de notificar.">
+                <Field label={st.confirmReads} hint={st.confirmReadsHint}>
                   <Input
                     type="number"
                     min={1}
@@ -358,7 +360,7 @@ function SettingsPage() {
                     onChange={(e) => upd("monitor", { confirm_reads: Number(e.target.value) })}
                   />
                 </Field>
-                <Field label="Linhas mínimas reconhecidas (%)" hint="Abaixo disso a lista é considerada não visível.">
+                <Field label={st.minRows} hint={st.minRowsHint}>
                   <Input
                     type="number"
                     min={10}
@@ -369,8 +371,8 @@ function SettingsPage() {
                 </Field>
               </div>
               <Field
-                label={`Rigor ao reconhecer os nomes: ${Math.round(cfg.monitor.row_match_threshold * 100)}%`}
-                hint="Semelhança mínima com a referência para aceitar uma linha. Padrão 65%."
+                label={st.rigor(Math.round(cfg.monitor.row_match_threshold * 100))}
+                hint={st.rigorHint}
               >
                 <Slider
                   min={30}
@@ -381,14 +383,14 @@ function SettingsPage() {
                 />
               </Field>
               <div>
-                <p className="mb-2 text-sm font-semibold">Nome do estado para cada cor</p>
+                <p className="mb-2 text-sm font-semibold">{st.stateNames}</p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {COLOR_BUCKETS.map((b) => (
                     <div key={b.key} className="space-y-1">
-                      <span className="text-xs text-muted-foreground">{b.label}</span>
+                      <span className="text-xs text-muted-foreground">{t.colors[b.key] ?? b.label}</span>
                       <Input
                         value={cfg.state_labels[b.key] ?? ""}
-                        placeholder={b.key === "gray" ? "Cinza" : `Outra cor (${b.label})`}
+                        placeholder={b.key === "gray" ? t.colors["gray"] : t.otherColor(t.colors[b.key] ?? b.label)}
                         onChange={(e) =>
                           setCfg((c) =>
                             c ? { ...c, state_labels: { ...c.state_labels, [b.key]: e.target.value } } : c,
@@ -399,7 +401,7 @@ function SettingsPage() {
                   ))}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Em branco: o painel mostra apenas a cor detectada, sem presumir o significado.
+                  {st.stateNamesHint}
                 </p>
               </div>
               <Button
@@ -417,25 +419,25 @@ function SettingsPage() {
                   })
                 }
               >
-                <Save /> Salvar
+                <Save /> {st.save}
               </Button>
             </div>
           )}
         </Panel>
 
-        <Panel title="Janela do Lineage 2" description="Como o agente encontra o jogo.">
+        <Panel title={st.windowTitle} description={st.windowDesc}>
           {!cfg ? (
             <Waiting connected={connected} />
           ) : (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Parte do título da janela">
+                <Field label={st.titleContains}>
                   <Input
                     value={cfg.window.title_contains}
                     onChange={(e) => upd("window", { title_contains: e.target.value })}
                   />
                 </Field>
-                <Field label="Processo do jogo" hint="Evita confundir com abas do navegador.">
+                <Field label={st.process} hint={st.processHint}>
                   <Input
                     value={cfg.window.process_name}
                     placeholder="L2.exe"
@@ -456,16 +458,16 @@ function SettingsPage() {
                     })
                   }
                 >
-                  <Save /> Salvar
+                  <Save /> {st.save}
                 </Button>
                 <Button variant="frame" onClick={listWindows}>
-                  <ListTree /> Listar janelas abertas
+                  <ListTree /> {st.listWindows}
                 </Button>
               </div>
               {windows && (
                 <div className="max-h-60 overflow-y-auto rounded border border-border">
                   {windows.length === 0 && (
-                    <p className="p-3 text-sm text-muted-foreground">Nenhuma janela encontrada.</p>
+                    <p className="p-3 text-sm text-muted-foreground">{st.noWindows}</p>
                   )}
                   {windows.map((w, i) => (
                     <button
@@ -485,12 +487,12 @@ function SettingsPage() {
         </Panel>
 
         <Panel
-          title="Testes"
-          description="O jogo vem para frente durante o teste."
+          title={st.testsTitle}
+          description={st.testsDesc}
           actions={
             <Button asChild variant="frame" size="sm">
               <Link to="/calibracao">
-                <Crosshair /> Calibração
+                <Crosshair /> {st.calibration}
               </Link>
             </Button>
           }
@@ -501,15 +503,14 @@ function SettingsPage() {
               disabled={!connected || !!testing}
               onClick={() => runTest("capture", "/api/test/capture")}
             >
-              {testing === "capture" ? <Loader2 className="animate-spin" /> : <Camera />} Testar captura
+              {testing === "capture" ? <Loader2 className="animate-spin" /> : <Camera />} {st.testCapture}
             </Button>
             <Button
               variant="frame"
               disabled={!connected || !!testing}
               onClick={() => runTest("clicks", "/api/test/clicks")}
             >
-              {testing === "clicks" ? <Loader2 className="animate-spin" /> : <MousePointerClick />} Testar 2
-              cliques no RAID
+              {testing === "clicks" ? <Loader2 className="animate-spin" /> : <MousePointerClick />} {st.testClicks}
             </Button>
           </div>
           {test && test.kind !== "discord" && <TestResultView result={test.result} />}
@@ -520,9 +521,10 @@ function SettingsPage() {
 }
 
 function Waiting({ connected }: { connected: boolean }) {
+  const { t } = useI18n();
   return (
     <p className="py-6 text-sm text-muted-foreground">
-      {connected ? "Carregando configurações do agente…" : "Conecte o agente para editar."}
+      {connected ? t.settings.loading : t.settings.connectToEdit}
     </p>
   );
 }
