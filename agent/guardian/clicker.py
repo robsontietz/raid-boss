@@ -5,6 +5,9 @@ import time
 
 from . import window as win32
 
+ADMIN_HINT = ("O jogo roda como administrador e o agente não, então o Windows descarta os cliques. "
+              "Feche o agente e abra o iniciar.bat de novo, aceitando o pedido de permissão de administrador.")
+
 
 class ClickError(Exception):
     pass
@@ -23,6 +26,8 @@ def click_raid_twice(win: win32.GameWindow, point: dict, mode: str, delay_ms: in
     x, y = int(point["x"]), int(point["y"])
     if not (0 <= x < current.width and 0 <= y < current.height):
         raise ClickError("O ponto do botão RAID está fora da janela do jogo. Recalibre.")
+    if not win32.is_admin() and win32.process_elevated(current):
+        raise ClickError(ADMIN_HINT)
 
     if mode == "background":
         win32.post_click(current, x, y)
@@ -32,20 +37,19 @@ def click_raid_twice(win: win32.GameWindow, point: dict, mode: str, delay_ms: in
 
     if not current.foreground:
         raise ClickError("O jogo não está em primeiro plano. Clique cancelado para não atingir outro programa.")
-    import pyautogui  # import tardio
-    pyautogui.FAILSAFE = True
-    pyautogui.PAUSE = 0
     sx, sy = current.left + x, current.top + y
+    original = win32.cursor_pos()
     try:
-        original = pyautogui.position()
-        pyautogui.click(sx, sy)
+        if not win32.physical_click(sx, sy):
+            raise ClickError("O Windows recusou o clique. " + ADMIN_HINT)
         time.sleep(max(0.05, delay_ms / 1000))
         # Confere de novo antes do segundo clique.
         again = win32.refresh(current)
         if again is None or (not again.foreground) or again.left != current.left or again.top != current.top:
             raise ClickError("A janela do jogo mudou entre os cliques. Segundo clique cancelado.")
-        pyautogui.click(sx, sy)
+        if not win32.physical_click(sx, sy):
+            raise ClickError("O Windows recusou o segundo clique. " + ADMIN_HINT)
+    finally:
         if restore_mouse:
-            pyautogui.moveTo(original.x, original.y)
-    except pyautogui.FailSafeException as exc:
-        raise ClickError("Clique interrompido pelo FAILSAFE (mouse no canto da tela).") from exc
+            time.sleep(0.05)
+            win32.user32.SetCursorPos(*original)

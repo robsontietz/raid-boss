@@ -125,6 +125,10 @@ class Monitor:
         self.logs: deque = deque(maxlen=200)
         self.references: Optional[list[np.ndarray]] = None
         self.ocr_available = _ocr_available()
+        self.admin = win32.is_admin()
+        if win32.IS_WINDOWS and not self.admin:
+            log.warning("O agente não está rodando como administrador; se o jogo rodar como administrador, "
+                        "os cliques serão ignorados. Abra o iniciar.bat e aceite o pedido de permissão.")
 
         m = config.get()["monitor"]
         self.tracker = BossTracker(sensitivity=m["sensitivity"], confirm_reads=m["confirm_reads"])
@@ -499,7 +503,7 @@ class Monitor:
         with self.lock:
             return {
                 "agent": {"version": VERSION, "started_at": self.started_at, "windows": win32.IS_WINDOWS,
-                          "ocr_available": self.ocr_available},
+                          "ocr_available": self.ocr_available, "admin": self.admin},
                 "monitoring": {
                     "active": self.active, "status_text": self.status_text,
                     "last_update": self.last_update, "last_attempt": self.last_attempt,

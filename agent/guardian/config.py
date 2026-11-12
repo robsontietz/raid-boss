@@ -13,16 +13,20 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from .bosses import default_boss_config
+from .bosses import LIST_ROWS, default_boss_config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("GRW_DATA_DIR", BASE_DIR / "data"))
+
+# Versão do layout da lista. 2 = a lista do jogo tem 20 linhas e os bosses ficam na linha real.
+LAYOUT_VERSION = 2
 
 BUCKETS = ["gray", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"]
 
 
 def defaults() -> dict:
     return {
+        "layout": LAYOUT_VERSION,
         "server": {"host": "127.0.0.1", "port": 8765, "token": ""},
         "panel_url": "",
         "discord": {"webhook_url": "", "enabled": True},
@@ -43,7 +47,7 @@ def defaults() -> dict:
         "calibration": {
             "raid_button": None,  # {"x": int, "y": int} relativo à área cliente da janela
             "list_region": None,  # {"x","y","w","h"} relativo à área cliente
-            "rows": 11,
+            "rows": LIST_ROWS,
             "client_size": None,  # [w, h] no momento da calibração
         },
         "state_labels": {"gray": "Standby", "red": "In Battle"},
@@ -83,18 +87,24 @@ class ConfigStore:
                 backup = self.path.with_suffix(".corrompido.json")
                 self.path.replace(backup)
                 loaded = {}
+        migrate = bool(loaded) and int(loaded.get("layout") or 1) < LAYOUT_VERSION
         self.data = _merge(defaults(), loaded)
+        if migrate:
+            # Versão anterior supunha 11 linhas seguidas; a lista do jogo tem 20.
+            self.data["layout"] = LAYOUT_VERSION
+            self.data["calibration"]["rows"] = LIST_ROWS
         if not self.data["server"].get("token"):
             self.data["server"]["token"] = secrets.token_urlsafe(24)
-        self._fix_bosses()
+        self._fix_bosses(reset_rows=migrate)
         self.save()
 
-    def _fix_bosses(self) -> None:
+    def _fix_bosses(self, reset_rows: bool = False) -> None:
         known = {b["id"]: b for b in self.data.get("bosses") or [] if isinstance(b, dict) and "id" in b}
         fixed = []
         for b in default_boss_config():
             cur = known.get(b["id"], {})
-            fixed.append({**b, "row": int(cur.get("row", b["row"])), "enabled": bool(cur.get("enabled", True))})
+            row = b["row"] if reset_rows else int(cur.get("row", b["row"]))
+            fixed.append({**b, "row": row, "enabled": bool(cur.get("enabled", True))})
         self.data["bosses"] = fixed
 
     def save(self) -> None:
@@ -184,7 +194,7 @@ class ConfigStore:
                         labels[k] = str(v).strip()[:40]
                 d["state_labels"] = labels
             if "bosses" in patch:
-                rows = d["calibration"].get("rows") or 11
+                rows = d["calibration"].get("rows") or LIST_ROWS
                 by_id = {b.get("id"): b for b in patch["bosses"] or [] if isinstance(b, dict)}
                 for b in d["bosses"]:
                     p = by_id.get(b["id"])

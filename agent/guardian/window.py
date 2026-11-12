@@ -38,6 +38,38 @@ if IS_WINDOWS:
     kernel32.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
                                                     ctypes.POINTER(wintypes.DWORD)]
     kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    user32.SetCursorPos.argtypes = [ctypes.c_int, ctypes.c_int]
+    user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+    advapi32.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE)]
+    advapi32.GetTokenInformation.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                             ctypes.POINTER(wintypes.DWORD)]
+
+    ULONG_PTR = ctypes.c_size_t
+
+    class _MOUSEINPUT(ctypes.Structure):
+        _fields_ = [("dx", ctypes.c_long), ("dy", ctypes.c_long), ("mouseData", wintypes.DWORD),
+                    ("dwFlags", wintypes.DWORD), ("time", wintypes.DWORD), ("dwExtraInfo", ULONG_PTR)]
+
+    class _KEYBDINPUT(ctypes.Structure):
+        _fields_ = [("wVk", wintypes.WORD), ("wScan", wintypes.WORD), ("dwFlags", wintypes.DWORD),
+                    ("time", wintypes.DWORD), ("dwExtraInfo", ULONG_PTR)]
+
+    class _HARDWAREINPUT(ctypes.Structure):
+        _fields_ = [("uMsg", wintypes.DWORD), ("wParamL", wintypes.WORD), ("wParamH", wintypes.WORD)]
+
+    class _INPUTUNION(ctypes.Union):
+        _fields_ = [("mi", _MOUSEINPUT), ("ki", _KEYBDINPUT), ("hi", _HARDWAREINPUT)]
+
+    class _INPUT(ctypes.Structure):
+        _fields_ = [("type", wintypes.DWORD), ("u", _INPUTUNION)]
+
+    user32.SendInput.argtypes = [wintypes.UINT, ctypes.POINTER(_INPUT), ctypes.c_int]
+    user32.SendInput.restype = wintypes.UINT
+
+    MOUSEEVENTF_MOVE = 0x0001
+    MOUSEEVENTF_LEFTDOWN = 0x0002
+    MOUSEEVENTF_LEFTUP = 0x0004
 
 
 @dataclass
@@ -176,3 +208,76 @@ def post_click(win: GameWindow, x: int, y: int) -> None:
     user32.PostMessageW(win.hwnd, 0x0201, 0x0001, lparam)  # WM_LBUTTONDOWN
     time.sleep(0.04)
     user32.PostMessageW(win.hwnd, 0x0202, 0, lparam)  # WM_LBUTTONUP
+
+
+# --------------------------------------------------------------------------- permissões / cliques nativos
+
+def is_admin() -> bool:
+    """O agente está rodando como administrador?"""
+    if not IS_WINDOWS:
+        return False
+    try:
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:
+        return False
+
+
+def process_elevated(win: GameWindow) -> Optional[bool]:
+    """O processo do jogo roda como administrador? None = não foi possível saber.
+
+    Se não conseguimos nem abrir o processo para consulta, quase sempre é porque
+    ele roda com mais permissão que o agente.
+    """
+    if not IS_WINDOWS:
+        return None
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(win.hwnd, ctypes.byref(pid))
+    h = kernel32.OpenProcess(0x1000, False, pid.value)
+    if not h:
+        return True
+    try:
+        tok = wintypes.HANDLE()
+        if not advapi32.OpenProcessToken(h, 0x0008, ctypes.byref(tok)):  # TOKEN_QUERY
+            return True if ctypes.get_last_error() == 5 else None  # 5 = acesso negado
+        try:
+            elevation = wintypes.DWORD()
+            size = wintypes.DWORD()
+            if not advapi32.GetTokenInformation(tok, 20, ctypes.byref(elevation), ctypes.sizeof(elevation),
+                                                ctypes.byref(size)):  # TokenElevation
+                return None
+            return bool(elevation.value)
+        finally:
+            kernel32.CloseHandle(tok)
+    finally:
+        kernel32.CloseHandle(h)
+
+
+def cursor_pos() -> tuple[int, int]:
+    pt = wintypes.POINT()
+    user32.GetCursorPos(ctypes.byref(pt))
+    return int(pt.x), int(pt.y)
+
+
+def _mouse(flags: int, dx: int = 0, dy: int = 0) -> int:
+    inp = _INPUT(type=0, u=_INPUTUNION(mi=_MOUSEINPUT(dx, dy, 0, flags, 0, 0)))
+    return int(user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(_INPUT)))
+
+
+def physical_click(x: int, y: int, hover_ms: int = 90, hold_ms: int = 70) -> bool:
+    """Clique como uma pessoa faria: leva o cursor, mexe 1 px, espera, aperta, segura e solta.
+
+    Muitos jogos (o Lineage 2 incluso) ignoram um clique em que o cursor "teleporta"
+    e clica no mesmo instante: o botão ainda não percebeu o mouse em cima dele.
+    Devolve False se o Windows recusou os eventos.
+    """
+    user32.SetCursorPos(int(x), int(y))
+    time.sleep(0.03)
+    ok = _mouse(MOUSEEVENTF_MOVE, 1, 0) == 1
+    time.sleep(0.02)
+    ok = (_mouse(MOUSEEVENTF_MOVE, -1, 0) == 1) and ok
+    user32.SetCursorPos(int(x), int(y))
+    time.sleep(max(0.03, hover_ms / 1000))
+    ok = (_mouse(MOUSEEVENTF_LEFTDOWN) == 1) and ok
+    time.sleep(max(0.03, hold_ms / 1000))
+    ok = (_mouse(MOUSEEVENTF_LEFTUP) == 1) and ok
+    return ok
