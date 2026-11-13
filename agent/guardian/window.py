@@ -281,3 +281,39 @@ def physical_click(x: int, y: int, hover_ms: int = 90, hold_ms: int = 70) -> boo
     time.sleep(max(0.03, hold_ms / 1000))
     ok = (_mouse(MOUSEEVENTF_LEFTUP) == 1) and ok
     return ok
+
+
+# --------------------------------------------------------------------------- quem está sob o ponto
+
+if IS_WINDOWS:
+    user32.WindowFromPoint.argtypes = [wintypes.POINT]
+    user32.WindowFromPoint.restype = wintypes.HWND
+    user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+    user32.GetAncestor.restype = wintypes.HWND
+
+
+def _pid(hwnd) -> int:
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    return int(pid.value)
+
+
+def window_at(x: int, y: int) -> Optional[dict]:
+    """Janela (de nível superior) visível no ponto da tela, ou None."""
+    if not IS_WINDOWS:
+        return None
+    hwnd = user32.WindowFromPoint(wintypes.POINT(int(x), int(y)))
+    if not hwnd:
+        return None
+    root = user32.GetAncestor(hwnd, 2) or hwnd  # GA_ROOT
+    return {"hwnd": int(root), "pid": _pid(root), "title": _title(root), "process": _process_name(root)}
+
+
+def point_on_game(win: GameWindow, x: int, y: int) -> tuple[bool, str]:
+    """O ponto da tela está sobre a janela do jogo (e não coberto por outro programa)?"""
+    at = window_at(x, y)
+    if at is None:
+        return True, ""  # não foi possível consultar: não bloqueia
+    if at["hwnd"] == int(win.hwnd) or at["pid"] == _pid(win.hwnd):
+        return True, ""
+    return False, (at["title"] or at["process"] or "outra janela")
