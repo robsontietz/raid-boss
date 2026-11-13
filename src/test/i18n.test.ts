@@ -23,3 +23,22 @@ describe("language switch", () => {
     expect(colorName("red", "pt")).toBe("Vermelho");
   });
 });
+
+import { DEFAULT_BOSSES, RAID_LIST, isOlderVersion } from "@/lib/bosses";
+
+describe("RAID list layout", () => {
+  it("has the 20 in-game names with the 11 monitored bosses on their real rows", () => {
+    expect(RAID_LIST).toHaveLength(20);
+    const rows = Object.fromEntries(DEFAULT_BOSSES.map((b) => [b.name, RAID_LIST.indexOf(b.name) + 1]));
+    expect(rows).toEqual({
+      Gourd: 5, "Immortal Gourd": 6, "Palibati Queen Themis": 8, Lilith: 12, Anakim: 13,
+      Floki: 15, Bjorn: 16, Ivar: 17, Zahir: 18, Rashid: 19, Krusha: 20,
+    });
+  });
+
+  it("flags agents older than 1.1.0 for update", () => {
+    expect(isOlderVersion("1.0.0", "1.1.0")).toBe(true);
+    expect(isOlderVersion("1.1.0", "1.1.0")).toBe(false);
+    expect(isOlderVersion("1.2.0", "1.1.0")).toBe(false);
+  });
+});

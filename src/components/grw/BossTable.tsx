@@ -1,13 +1,13 @@
 import type { BossSnapshot } from "@/lib/agent/types";
-import { DEFAULT_BOSSES } from "@/lib/bosses";
+import { DEFAULT_BOSSES, RAID_LIST } from "@/lib/bosses";
 import { fmtAgo, fmtTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { colorName } from "@/lib/i18n/messages";
 import { ColorSwatch, MonitorStatusBadge, StateChip } from "./badges";
 
-const OFFLINE: BossSnapshot[] = DEFAULT_BOSSES.map((b, i) => ({
+const OFFLINE: BossSnapshot[] = DEFAULT_BOSSES.map((b) => ({
   ...b,
-  row: i + 1,
+  row: RAID_LIST.indexOf(b.name) + 1,
   enabled: true,
   state: null,
   bucket: null,

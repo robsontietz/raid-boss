@@ -33,3 +33,5 @@ use the editor.
 
 - All panel UI text lives in `src/lib/i18n/messages.ts` (Portuguese `pt`, English `en` typed as `Messages`) and is read via `useI18n()`; never hardcode visible text in components. Why: the header flag switch must flip every panel text at once.
 - Messages produced by the Windows agent (logs, errors, test messages) are shown as sent; only the agent's default state/color names are translated client-side via `localizeState`/`colorName`. Why: the agent runs on the user's PC and is not language-aware.
+- The in-game RAID list always shows all its names; the agent reads every row and maps each monitored boss to its real row via `RAID_LIST` (keep `agent/guardian/bosses.py` and `src/lib/bosses.ts` identical). Why: monitored bosses are not contiguous, so a partial region cannot be calibrated.
+- When the agent changes, bump `VERSION` in `agent/guardian/__init__.py`, set `AGENT_MIN_VERSION` in `src/lib/bosses.ts` to match, and rebuild the ZIP with `scripts/build_agent_zip.py`. Why: the dashboard tells users with an older agent to download again.

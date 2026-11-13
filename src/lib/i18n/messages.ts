@@ -131,6 +131,13 @@ const pt = {
     log: "Registro do agente",
     logDesc: "Erros de captura e comunicação aparecem aqui.",
     noLogs: "Sem registros.",
+    adminTitle: "O agente não está rodando como administrador.",
+    adminBody:
+      "Se o Lineage 2 roda como administrador, o Windows descarta os cliques no botão RAID. Feche o agente e abra o iniciar.bat novamente, aceitando o pedido de permissão.",
+    updateTitle: "Há uma versão nova do agente.",
+    updateBody: (v: string) =>
+      `Você está usando a versão ${v}. Baixe o agente de novo e substitua os arquivos da pasta (suas configurações são mantidas).`,
+    download: "Baixar agente",
   },
   history: {
     eyebrow: "Registro",
@@ -146,7 +153,7 @@ const pt = {
   calib: {
     eyebrow: "Assistente",
     title: "Calibração",
-    desc: "Mostre ao agente onde fica o botão RAID e onde aparecem os nomes dos 11 bosses.",
+    desc: "Mostre ao agente onde fica o botão RAID e onde está a lista. Marque a lista inteira (20 nomes): o agente acompanha só os 11 bosses escolhidos.",
     screenTitle: "1. Tela do jogo",
     screenDesc: "Deixe a lista RAID aberta no jogo e capture a tela. O jogo vem para frente por um instante.",
     capture: "Capturar tela do jogo",
@@ -155,7 +162,7 @@ const pt = {
     stepRaid: "2. Clique no botão RAID",
     stepList: "3. Arraste sobre os nomes",
     shotAlt: "Tela do Lineage 2 capturada",
-    coverHint: "Cubra somente os nomes, do primeiro ao último boss. As linhas douradas devem cair em cima de cada nome.",
+    coverHint: "Cubra os 20 nomes da lista, do primeiro (Core of Chaos) ao último (Krusha), com o número de linhas em 20. Cada linha dourada deve cair em cima de um nome; os monitorados aparecem em destaque.",
     adjust: "Ajustes",
     raidButton: "Botão RAID",
     listArea: "Área da lista",
@@ -260,7 +267,7 @@ const pt = {
       },
       {
         title: "Execute iniciar.bat",
-        body: "Uma janela mostra o endereço e o token. Deixe-a aberta enquanto joga.",
+        body: "Aceite o pedido de permissão de administrador (sem ele o jogo ignora os cliques). Uma janela mostra o endereço e o token. Deixe-a aberta enquanto joga.",
       },
       {
         title: "Conecte o painel",
@@ -268,7 +275,7 @@ const pt = {
       },
       {
         title: "Calibre e inicie",
-        body: "Em Calibração marque o botão RAID e a área dos nomes, capture a referência, configure o Discord e clique em Iniciar monitoramento.",
+        body: "Em Calibração marque o botão RAID e a lista inteira (os 20 nomes), capture a referência, configure o Discord e clique em Iniciar monitoramento.",
       },
     ],
     goSettings: "Ir para Configurações",
@@ -284,7 +291,7 @@ const pt = {
     tips: [
       "Use o jogo em modo janela ou tela cheia sem bordas.",
       "Não mude o tamanho da janela depois de calibrar (se mudar, recalibre).",
-      "Se os cliques não funcionarem, abra o iniciar.bat como administrador.",
+      "Se o Windows perguntar se o iniciar.bat pode fazer alterações, clique em Sim: é o que permite clicar no jogo.",
       "Abra o painel em uma aba própria do navegador no PC do jogo.",
     ],
   },
@@ -422,6 +429,13 @@ const en: Messages = {
     log: "Agent log",
     logDesc: "Capture and connection errors show up here.",
     noLogs: "No entries.",
+    adminTitle: "The agent is not running as administrator.",
+    adminBody:
+      "If Lineage 2 runs as administrator, Windows drops the clicks on the RAID button. Close the agent and open iniciar.bat again, accepting the permission prompt.",
+    updateTitle: "A new version of the agent is available.",
+    updateBody: (v: string) =>
+      `You're on version ${v}. Download the agent again and replace the files in its folder (your settings are kept).`,
+    download: "Download agent",
   },
   history: {
     eyebrow: "Log",
@@ -437,7 +451,7 @@ const en: Messages = {
   calib: {
     eyebrow: "Wizard",
     title: "Calibration",
-    desc: "Show the agent where the RAID button is and where the 11 boss names appear.",
+    desc: "Show the agent where the RAID button and the list are. Mark the whole list (20 names): the agent only follows the 11 chosen bosses.",
     screenTitle: "1. Game screen",
     screenDesc: "Keep the RAID list open in the game and capture the screen. The game comes to the front for a moment.",
     capture: "Capture game screen",
@@ -446,7 +460,7 @@ const en: Messages = {
     stepRaid: "2. Click the RAID button",
     stepList: "3. Drag over the names",
     shotAlt: "Captured Lineage 2 screen",
-    coverHint: "Cover only the names, from the first to the last boss. The gold lines should fall on each name.",
+    coverHint: "Cover all 20 names in the list, from the first (Core of Chaos) to the last (Krusha), with the row count at 20. Each gold line should fall on a name; monitored ones are highlighted.",
     adjust: "Adjustments",
     raidButton: "RAID button",
     listArea: "List area",
@@ -551,7 +565,7 @@ const en: Messages = {
       },
       {
         title: "Run iniciar.bat",
-        body: "A window shows the address and the token. Keep it open while you play.",
+        body: "Accept the administrator permission prompt (without it the game ignores the clicks). A window shows the address and the token. Keep it open while you play.",
       },
       {
         title: "Connect the dashboard",
@@ -559,7 +573,7 @@ const en: Messages = {
       },
       {
         title: "Calibrate and start",
-        body: "In Calibration, mark the RAID button and the names area, capture the reference, set up Discord and click Start monitoring.",
+        body: "In Calibration, mark the RAID button and the whole list (all 20 names), capture the reference, set up Discord and click Start monitoring.",
       },
     ],
     goSettings: "Go to Settings",
@@ -575,7 +589,7 @@ const en: Messages = {
     tips: [
       "Run the game in windowed or borderless fullscreen mode.",
       "Don't resize the window after calibrating (if you do, recalibrate).",
-      "If clicks don't work, run iniciar.bat as administrator.",
+      "If Windows asks whether iniciar.bat may make changes, click Yes: that is what allows clicking in the game.",
       "Open the dashboard in its own browser tab on the gaming PC.",
     ],
   },

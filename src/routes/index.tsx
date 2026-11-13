@@ -23,6 +23,7 @@ import { EventTable } from "@/components/grw/EventTable";
 import { StatusTile } from "@/components/grw/StatusTile";
 import { Button } from "@/components/ui/button";
 import { useAgent, useNow } from "@/lib/agent/AgentProvider";
+import { AGENT_MIN_VERSION, AGENT_ZIP_PATH, isOlderVersion } from "@/lib/bosses";
 import { fmtAgo, fmtCountdown, fmtTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
@@ -157,6 +158,31 @@ function Dashboard() {
           <Button asChild variant="gold" size="sm">
             <Link to="/calibracao">{d.openCalibration}</Link>
           </Button>
+        </div>
+      )}
+
+      {connected && snapshot && isOlderVersion(snapshot.agent.version, AGENT_MIN_VERSION) && (
+        <div className="panel-frame mb-6 flex flex-col gap-3 border-warning/40 p-4 sm:flex-row sm:items-center">
+          <AlertTriangle className="size-6 shrink-0 text-warning" />
+          <p className="flex-1 text-sm">
+            <span className="font-semibold">{d.updateTitle}</span>{" "}
+            <span className="text-muted-foreground">{d.updateBody(snapshot.agent.version)}</span>
+          </p>
+          <Button asChild variant="gold" size="sm">
+            <a href={AGENT_ZIP_PATH} download>
+              {d.download}
+            </a>
+          </Button>
+        </div>
+      )}
+
+      {connected && snapshot?.agent.windows && snapshot.agent.admin === false && (
+        <div className="panel-frame mb-6 flex items-start gap-3 border-warning/40 p-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
+          <p className="text-sm">
+            <span className="font-semibold">{d.adminTitle}</span>{" "}
+            <span className="text-muted-foreground">{d.adminBody}</span>
+          </p>
         </div>
       )}
 

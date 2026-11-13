@@ -25,7 +25,7 @@ export interface LogEntry {
 }
 
 export interface AgentSnapshot {
-  agent: { version: string; started_at: string; windows: boolean; ocr_available: boolean };
+  agent: { version: string; started_at: string; windows: boolean; ocr_available: boolean; admin?: boolean };
   monitoring: {
     active: boolean;
     status_text: string;

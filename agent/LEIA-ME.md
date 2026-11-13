@@ -18,13 +18,15 @@ um dos 11 Raid Bosses muda e avisa no Discord.
 ## Uso
 
 1. Abra o Lineage 2 e deixe a janela da lista (abas *Hunting Zone* / *Raid*) aberta.
-2. Dê dois cliques em **`iniciar.bat`**. Uma janela preta mostra o **endereço** e o **token**.
+2. Dê dois cliques em **`iniciar.bat`** e clique em **Sim** quando o Windows pedir permissão de administrador
+   (sem isso o jogo, que roda como administrador, ignora os cliques). Uma janela preta mostra o **endereço** e o **token**.
 3. Abra o painel web, vá em **Configurações → Conexão com o agente**, cole o token e clique em *Conectar*.
 4. Em **Calibração**:
    1. clique em *Capturar tela do jogo*;
    2. clique no botão **RAID** da imagem;
-   3. arraste um retângulo cobrindo **somente os nomes** dos 11 bosses (do primeiro ao último);
-   4. confira se as linhas desenhadas caem em cima de cada nome e salve;
+   3. com o número de linhas em **20**, arraste um retângulo cobrindo **a lista inteira**, de *Core of Chaos* até *Krusha*
+      (o jogo mostra 20 nomes; o agente acompanha só os 11 monitorados, cada um na sua linha);
+   4. confira se cada linha desenhada cai em cima de um nome e salve;
    5. clique em *Capturar referência* (com a lista visível).
 5. Em **Configurações**, cole o Webhook do Discord e use *Testar Discord*.
 6. No painel principal clique em **Iniciar monitoramento**.
@@ -72,8 +74,11 @@ O Webhook e o token **não** ficam no código-fonte. Não compartilhe `data/conf
   Ative *Trazer o jogo para frente* ou use o modo *segundo plano* (nem todo cliente aceita).
 - **"O tamanho da janela mudou"**: refaça a calibração.
 - **Captura preta**: troque para modo janela/sem bordas.
-- **Cliques não funcionam**: alguns servidores com anti-cheat bloqueiam cliques simulados.
-  Execute o `iniciar.bat` como administrador (o jogo também roda como administrador em muitos servidores).
+- **Cliques não funcionam**: confirme que aceitou o pedido de administrador ao abrir o `iniciar.bat`
+  (o painel avisa quando o agente está sem essa permissão). O agente leva o cursor até o botão, espera um instante
+  e só então clica, como uma pessoa. Se ainda assim nada acontecer, o anti-cheat do servidor bloqueia cliques simulados.
+- **Atualizou do agente antigo?** Substitua os arquivos da pasta (a pasta `data` com suas configurações fica).
+  Na primeira abertura a lista passa a ter 20 linhas: refaça a calibração e capture a referência.
 
 ## Testes (opcional, para desenvolvedores)
 

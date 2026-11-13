@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAgent } from "@/lib/agent/AgentProvider";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { AgentConfig, TestResult } from "@/lib/agent/types";
+import { LIST_ROWS, RAID_LIST } from "@/lib/bosses";
 
 export const Route = createFileRoute("/calibracao")({
   head: () => ({
@@ -48,7 +49,7 @@ function CalibrationPage() {
   const [mode, setMode] = useState<"raid" | "list">("raid");
   const [raid, setRaid] = useState<Point | null>(null);
   const [region, setRegion] = useState<Rect | null>(null);
-  const [rows, setRows] = useState(11);
+  const [rows, setRows] = useState<number>(LIST_ROWS);
   const [drag, setDrag] = useState<Point | null>(null);
   const [refResult, setRefResult] = useState<TestResult | null>(null);
   const [cfg, setCfg] = useState<AgentConfig | null>(null);
@@ -61,7 +62,7 @@ function CalibrationPage() {
         setCfg(c);
         setRaid(c.calibration.raid_button);
         setRegion(c.calibration.list_region);
-        setRows(c.calibration.rows || 11);
+        setRows(c.calibration.rows || LIST_ROWS);
       })
       .catch((e) => toast.error((e as Error).message));
   }, [connected, call]);
@@ -238,8 +239,10 @@ function CalibrationPage() {
                           className="absolute inset-x-0 border-t border-gold/40"
                           style={{ top: `${(i / rows) * 100}%`, height: `${100 / rows}%` }}
                         >
-                          <span className="absolute -right-1 top-0 translate-x-full whitespace-nowrap bg-background/80 px-1 text-[10px] leading-tight text-gold">
-                            {i + 1}. {rowNames.get(i + 1) ?? ""}
+                          <span
+                            className={`absolute -right-1 top-0 translate-x-full whitespace-nowrap bg-background/80 px-1 text-[10px] leading-tight ${rowNames.has(i + 1) ? "font-bold text-gold" : "text-muted-foreground"}`}
+                          >
+                            {i + 1}. {rowNames.get(i + 1) ?? RAID_LIST[i] ?? ""}
                           </span>
                         </div>
                       ))}
